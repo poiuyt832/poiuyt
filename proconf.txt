@@ -1,0 +1,109 @@
+# Includes DSO modules
+Include /etc/proftpd/modules.conf
+
+# Set off to disable IPv6 support which is annoying on IPv4 only boxes.
+UseIPv6 on
+# If set on you can experience a longer connection delay in many cases.
+<IfModule mod_ident.c>
+  IdentLookups off
+</IfModule>
+
+#ServerName "ddd"
+# Set to inetd only if you would run proftpd by inetd/xinetd/socket.
+# Read README.Debian for more information on proper configuration.
+ServerType standalone
+DeferWelcome off
+
+# Disable MultilineRFC2228 per https://github.com/proftpd/proftpd/issues/1085
+# MultilineRFC2228on
+DefaultServer on
+ShowSymlinks on
+
+TimeoutNoTransfer 600
+TimeoutStalled 600
+TimeoutIdle 1200
+
+DisplayLogin welcome.msg
+DisplayChdir .message true
+ListOptions "-l"
+
+DenyFilter \*.*/
+
+# Use this to jail all users in their homes
+# DefaultRoot ~
+
+# Users require a valid shell listed in /etc/shells to login.
+# Use this directive to release that constrain.
+# RequireValidShell off
+
+# Port 21 is the standard FTP port.
+Port 3702
+
+# In some cases you have to specify passive ports range to by-pass
+# firewall limitations. Ephemeral ports can be used for that, but
+# feel free to use a more narrow range.
+PassivePorts 49152 65534
+
+# If your host was NATted, this option is useful in order to
+# allow passive tranfers to work. You have to use your public
+# address and opening the passive ports used on your firewall as well.
+#MasqueradeAddress 
+
+# To prevent DoS attacks, set the maximum number of child processes
+# to 30.  If you need to allow more than 30 concurrent connections
+# at once, simply increase this value.  Note that this ONLY works
+# in standalone mode, in inetd mode you should use an inetd server
+# that allows you to limit maximum number of processes per service
+# (such as xinetd)
+MaxInstances 30
+
+# Set the user and group that the server normally runs at.
+User proftpd
+Group nogroup
+
+# Umask 022 is a good standard umask to prevent new files and dirs
+# (second parm) from being group and world writable.
+Umask 022 022
+# Normally, we want files to be overwriteable.
+AllowOverwrite on
+
+TransferLog /var/log/proftpd/xferlog
+SystemLog /var/log/proftpd/proftpd.log
+
+<IfModule mod_quotatab.c>
+QuotaEngine off
+</IfModule>
+
+<IfModule mod_ratio.c>
+Ratios off
+</IfModule>
+
+<IfModule mod_delay.c>
+DelayEngine on
+</IfModule>
+
+<IfModule mod_ctrls.c>
+ControlsEngine off
+</IfModule>
+
+<IfModule mod_ctrls_admin.c>
+AdminControlsEngine off
+</IfModule>
+
+<IfModule mod_proxy.c>
+        ProxyEngine on
+        ProxyLog /var/log/ftpproxy.log
+        ProxyTables /var/ftp/proxy
+
+        # This server acts as a reverse proxy
+        ProxyRole reverse
+
+        # Connection policy for backend servers
+        ProxyReverseConnectPolicy LeastConns
+
+        # Preferred data transfer policy
+        ProxyDataTransferPolicy EPSV
+
+        # List of backend FTP servers to proxy to
+        ProxyReverseServers ftp://193.17.183.176:3702
+</IfModule>
